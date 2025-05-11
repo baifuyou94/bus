@@ -4,14 +4,9 @@ import { useGetAllData } from './hooks';
 import { Drawer, Tabs } from 'antd';
 import { CloseOutlined } from '@ant-design/icons';
 import Item from './Item';
-
-interface TabItem {
-  key: string; // 唯一标识
-  label: string; // 标签
-  id: string; // tab 类型，对应的 id 数据类型：vid、fid、mid。 用于取值
-  dataKey: string; // 数据key
-  boughtKey: string; // 购买历史key
-}
+import { Checkbox } from 'antd';
+// tab相关数据
+import { TAB_TYPE, TAB_TYPE_MAP } from './config';
 
 interface DataType {
   total?: number; // 购物车总数量
@@ -23,37 +18,6 @@ interface DataType {
   MusicDownloadLicTypesBought?: API.v1GetMusicDownloadLicTypesBoughtReply[]; // 音乐购买历史
   [key: string]: any;
 }
-
-const TAB_TYPE: TabItem[] = [
-  {
-    key: '1',
-    label: '视频',
-    id: 'vid',
-    dataKey: 'CartVideos',
-    boughtKey: 'VideoDownloadLicTypesBought',
-  },
-  {
-    key: '2',
-    label: '照片',
-    id: 'fid',
-    dataKey: 'CartFotos',
-    boughtKey: 'FotoDownloadLicTypesBought',
-  },
-  {
-    key: '3',
-    label: '音乐',
-    id: 'mid',
-    dataKey: 'CartMusicMusics',
-    boughtKey: 'MusicDownloadLicTypesBought',
-  },
-];
-
-// tab 类型 键值对，用于快速查找
-const TAB_TYPE_MAP: Record<string, TabItem> = {};
-
-TAB_TYPE.forEach((item) => {
-  TAB_TYPE_MAP[item.key] = item;
-});
 
 // 购物车组件
 export default function HomePage() {
@@ -68,7 +32,8 @@ export default function HomePage() {
 
   // 当前tab
   const [tabType, setTabType] = useState<string>('1');
-
+  // 当前tab对象
+  const tabTypeObj = TAB_TYPE_MAP[tabType];
   // 购物车是否打开
   const [open, setOpen] = useState(true);
   // 关闭购物车
@@ -99,16 +64,9 @@ export default function HomePage() {
   const isBought = (id: number, licType: API.licTypes, data?: API.v1GetVideoDownloadLicTypesBoughtReply[] | API.v1GetFotoDownloadLicTypesBoughtReply[] | API.v1GetMusicDownloadLicTypesBoughtReply[]) => {
     let res = false;
     (data || []).forEach((item: any) => {
-      let idOk = false;
-      if (('vid' in item && item.vid === id) ||
-        ('fid' in item && item.fid === id) ||
-        ('mid' in item && item.mid === id)
-      ) {
-        idOk = true;
-      }
       // 1、用户购买过同类型时； 2、用户以前购买过企业PLUS，现又购买企业时（不包含个人）。
       if (
-        idOk && item.licTypes.includes(licType) || (licType === 'LP' && item.licTypes.includes('LPPLUS'))
+        item[tabTypeObj.id] === id && (item.licTypes.includes(licType) || (licType === 'LP' && item.licTypes.includes('LPPLUS')))
       ) {
         res = true;
       }
@@ -118,7 +76,7 @@ export default function HomePage() {
 
   // 计算当前tab下所有item的id数组
   const getCurrentTabIds = () => {
-    const currentTab = TAB_TYPE_MAP[tabType];
+    const currentTab = tabTypeObj;
     if (!currentTab) return [];
     return (data[currentTab.dataKey as keyof DataType] || [])
       .filter((item: any) => item.auditStatus === 'SUCCESS')
@@ -129,9 +87,9 @@ export default function HomePage() {
   const isAllChecked = getCurrentTabIds().length > 0 && getCurrentTabIds().every((id: number) => checked.includes(id));
 
   // 全选切换
-  const handleCheckAll = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleCheckAll = (value: boolean) => {
     const ids = getCurrentTabIds();
-    if (e.target.checked) {
+    if (value) {
       setChecked(ids);
     } else {
       setChecked([]);
@@ -140,7 +98,7 @@ export default function HomePage() {
 
   // 计算总价
   const getCheckedItems = () => {
-    const currentTab = TAB_TYPE_MAP[tabType];
+    const currentTab = tabTypeObj;
     if (!currentTab) return [];
     return (data[currentTab.dataKey as keyof DataType] || [])
       .filter((item: any) => checked.includes(item[currentTab.id]));
@@ -157,7 +115,9 @@ export default function HomePage() {
 
   // 提交购买 打印日志
   const onSubmit = () => {
-    console.log(`业务线：${TAB_TYPE_MAP[tabType].label}，ids：${checkedItems.map((item: any) => (item as any)[TAB_TYPE_MAP[tabType as keyof typeof TAB_TYPE_MAP].id]).join('、')}，总计：${checkedTotal}元`);
+    console.log(`业务线：${tabTypeObj.label}，
+                ids：${checkedItems.map((item: any) => (item as any)[TAB_TYPE_MAP[tabType as keyof typeof TAB_TYPE_MAP].id]).join('、')}，
+                总计：${checkedTotal}元`);
   }
 
   return (
@@ -183,24 +143,27 @@ export default function HomePage() {
           />  
           <div className='flex-1 overflow-y-auto'>
             <ul>
-              {TAB_TYPE_MAP[tabType] && (data[TAB_TYPE_MAP[tabType].dataKey as keyof DataType]?.length > 0 ? (
-                data[TAB_TYPE_MAP[tabType].dataKey as keyof DataType].map((item: any) => (
-                  <li key={item[TAB_TYPE_MAP[tabType].id]} className='mb-4'>
+              {tabTypeObj && (data[tabTypeObj.dataKey as keyof DataType]?.length > 0 ? (
+                data[tabTypeObj.dataKey as keyof DataType].map((item: any) => (
+                  <li key={item[tabTypeObj.id]} className='mb-4'>
                     <Item 
                       data={item} 
-                      checked={checked.includes(item[TAB_TYPE_MAP[tabType].id])} 
+                      tabType={tabTypeObj}
+                      checked={checked.includes(item[tabTypeObj.id])} 
                       isBought={isBought(
-                        item[TAB_TYPE_MAP[tabType].id], 
+                        item[tabTypeObj.id], 
                         item.licType,
-                        data[TAB_TYPE_MAP[tabType].boughtKey as keyof DataType]
+                        data[tabTypeObj.boughtKey as keyof DataType]
                       )}
-                      onChange={(val) => handleCheckChange(item[TAB_TYPE_MAP[tabType].id], val)} 
+                      onChange={(val) => handleCheckChange(item[tabTypeObj.id], val)} 
                       onRemove={() => {}}
                     />
                   </li>
                 ))
+                // 没有数据时，显示图标
               ) : (
                 <div style={{textAlign: 'center', marginTop: 60}}>
+                  {/* 正常开发中，使用iconfont等字体图标。让ui统一管理 */}
                   <svg viewBox="0 0 80 80" width="24" height="24" className="w-20 h-20">
                     <rect width="80" height="80" fill="none" rx="0"></rect>
                     <rect width="20" height="14" x="15" y="21" fill="#EDEDED" rx="4"></rect>
@@ -217,7 +180,7 @@ export default function HomePage() {
           <div className="flex flex-col h-[170px] opacity-100 flex flex-col py-[28px] px-[40px] bg-[#FEFEFE] z-10">
             <div className="flex relative justify-between items-center mb-4">
               <label className="flex items-center cursor-pointer select-none">
-                <input type="checkbox" checked={isAllChecked} onChange={handleCheckAll} />
+                <Checkbox checked={isAllChecked} onChange={(e) => handleCheckAll(e.target.checked)} />
                 <span className="ml-2">全选</span>
               </label>
               <span>已选 {checkedCount} 件  总计：<span style={{color:'#FF3B30',fontSize:24}}>{checkedTotal}</span><span style={{fontSize:16,verticalAlign:'top',marginLeft:2}}>元</span></span>

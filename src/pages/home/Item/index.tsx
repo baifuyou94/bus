@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
 import { Checkbox } from 'antd';
-import { LICENSE_TYPE_OBJ } from '@/config';
+import { LICENSE_TYPE_MAP } from '@/config';
+import { TAB_TYPE_MAP, TabItem } from '../config';
 
 interface Props {
+  tabType: TabItem;
   checked: boolean;
   data: API.v1GetBuyerCartVideosReply | API.v1GetBuyerCartFotosReply | API.v1GetBuyerCartMusicsReply;
   isBought: boolean;
@@ -11,11 +12,13 @@ interface Props {
 }
 
 const App = (props: Props) => {
-  const { checked, onChange, data, onRemove, isBought } = props;
+  const { checked, onChange, data, onRemove, isBought, tabType } = props;
 
   // 判断状态
   const isDisabled = data.auditStatus === 'FAIL';
-  const isRepeat = false;
+  // 获取授权类型
+  const licenseType = LICENSE_TYPE_MAP[data.licType];
+
   return (
     <div
       className={`
@@ -37,15 +40,10 @@ const App = (props: Props) => {
       <div className="flex-1 flex flex-col ml-3 overflow-hidden">
         <div className="truncate">{data.title}</div>
         <div className="flex items-center space-x-3 mt-1 text-neutral-60 text-sm">
-          <span>ID：{
-            'vid' in data ? data.vid :
-            'fid' in data ? data.fid :
-            'mid' in data ? data.mid : ''
-          }</span>
+          {/* @ts-ignore 忽略提示吧 */}
+          <span>ID：{data[TAB_TYPE_MAP[tabType.key].id]}</span>
           <span className="border-l border-neutral-40 h-3 mx-2"></span>
-          {'softwareType' in data && <span>类型：{
-            data.softwareType
-          }</span>}
+          {'softwareType' in data && <span>类型：{data.softwareType}</span>}
         </div>
         <div className="flex justify-between items-center mt-3">
             <button
@@ -56,15 +54,15 @@ const App = (props: Props) => {
               移除
             </button>
           <div className="flex items-center space-x-2">
-            <span className="text-neutral-60">{LICENSE_TYPE_OBJ[data.licType]}</span>
-            <span className={isDisabled || isRepeat ? 'text-2xl font-medium text-neutral-40' : 'text-2xl font-medium text-black'}>
-              {data.price * {'NP': 1, 'LP': 4, 'LPPLUS': 10}[data.licType]}
+            <span className="text-neutral-60">{licenseType.label}</span>
+            <span className={isDisabled || isBought ? 'text-2xl font-medium text-neutral-40' : 'text-2xl font-medium text-black'}>
+              {data.price * licenseType.rate}
             </span>
-            <span className={isDisabled || isRepeat ? 'text-base text-neutral-40' : 'text-base text-black'}>元</span>
+            <span className={isDisabled || isBought ? 'text-base text-neutral-40' : 'text-base text-black'}>元</span>
           </div>
         </div>
         {isDisabled && <span className="text-neutral-40 text-sm mt-2">已下架</span>}
-        {isRepeat && <div className="text-neutral-40 text-sm mt-2">您已购买过此素材</div>}
+        {isBought && <div className="text-neutral-40 text-sm mt-2">您已购买过此素材</div>}
       </div>
     </div>
   );

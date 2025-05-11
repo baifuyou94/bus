@@ -64,7 +64,7 @@ export default {
       "softwareType": "图片素材",
       "title": "自然风光摄影",
       "licType": "LP",
-      "fid": 54321
+      "fid": 66666
     },
     {
       "auditStatus": "SUCCESS",
@@ -73,7 +73,7 @@ export default {
       "softwareType": "PSD模板",
       "title": "企业名片设计",
       "licType": "LPPLUS",
-      "fid": 98765
+      "fid": 77777
     }
   ],
 
@@ -84,7 +84,7 @@ export default {
     //   "price": 29,
     //   "title": "轻松背景音乐",
     //   "licType": "NP",
-    //   "mid": 11223
+    //   "mid": 88888
     // },
     // {
     //   "auditStatus": "SUCCESS",
@@ -92,18 +92,18 @@ export default {
     //   "price": 59,
     //   "title": "史诗战斗音乐",
     //   "licType": "LP",
-    //   "mid": 44556
+    //   "mid": 99999
     // }
   ],
 
   '/vjn/video/download/lic-types-bought': [
     {
-      "licTypes": ["LP", "LPPLUS"],
+      "licTypes": ["LPPLUS"],
       "vid": 12345
     },
     {
-      "licTypes": ["MP"],
-      "vid": 67890
+      "licTypes": ["LPPLUS"],
+      "vid": 22222
     }
   ],
 
