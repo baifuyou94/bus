@@ -1,3 +1,6 @@
+// 接口设计有问题， vid，fid，mid 应该统一为 id。
+// softwareType 应该为标识1,2,3等。文案翻译应该统一放置config文件中，统一管理。
+
 // API 命名空间定义
 declare namespace API {
   type licTypes = 'NP' | 'LP' | 'LPPLUS';
