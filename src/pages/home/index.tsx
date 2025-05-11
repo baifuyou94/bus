@@ -5,42 +5,88 @@ import { Drawer, Tabs } from 'antd';
 import { CloseOutlined } from '@ant-design/icons';
 import Item from './Item';
 
+interface TabItem {
+  key: string; // 唯一标识
+  label: string; // 标签
+  id: string; // tab 类型，对应的 id 数据类型：vid、fid、mid。 用于取值
+  dataKey: string; // 数据key
+  boughtKey: string; // 购买历史key
+}
+
+interface DataType {
+  total?: number; // 购物车总数量
+  CartVideos?: API.v1GetBuyerCartVideosReply[]; // 购物车视频列表
+  CartFotos?: API.v1GetBuyerCartFotosReply[]; // 购物车照片列表
+  CartMusicMusics?: API.v1GetBuyerCartMusicsReply[]; // 购物车音乐列表
+  VideoDownloadLicTypesBought?: API.v1GetVideoDownloadLicTypesBoughtReply[]; // 视频购买历史
+  FotoDownloadLicTypesBought?: API.v1GetFotoDownloadLicTypesBoughtReply[]; // 照片购买历史
+  MusicDownloadLicTypesBought?: API.v1GetMusicDownloadLicTypesBoughtReply[]; // 音乐购买历史
+  [key: string]: any;
+}
+
+const TAB_TYPE: TabItem[] = [
+  {
+    key: '1',
+    label: '视频',
+    id: 'vid',
+    dataKey: 'CartVideos',
+    boughtKey: 'VideoDownloadLicTypesBought',
+  },
+  {
+    key: '2',
+    label: '照片',
+    id: 'fid',
+    dataKey: 'CartFotos',
+    boughtKey: 'FotoDownloadLicTypesBought',
+  },
+  {
+    key: '3',
+    label: '音乐',
+    id: 'mid',
+    dataKey: 'CartMusicMusics',
+    boughtKey: 'MusicDownloadLicTypesBought',
+  },
+];
+
+// tab 类型 键值对，用于快速查找
+const TAB_TYPE_MAP: Record<string, TabItem> = {};
+
+TAB_TYPE.forEach((item) => {
+  TAB_TYPE_MAP[item.key] = item;
+});
+
+// 购物车组件
 export default function HomePage() {
-  // 正确的开发逻辑，total数据单独获取。购物车里面的列表数据，在打开抽屉时候获取。
-  // 这里因为没有找到total接口，所以直接获取。
-  const {
-    total,
-    CartVideos,
-    CartFotos,
-    CartMusicMusics,
-    VideoDownloadLicTypesBought,
-    FotoDownloadLicTypesBought,
-    MusicDownloadLicTypesBought,
-  } = useGetAllData();
+  const data: DataType = useGetAllData();
+  const total = data.total;
 
-  const tabTypes = useCallback(() => [
-    { key: '1', label: `视频 ${CartVideos?.length}` },
-    { key: '2', label: `照片 ${CartFotos?.length}` },
-    { key: '3', label: `音乐 ${CartMusicMusics?.length}` },
-  ], [CartVideos, CartFotos, CartMusicMusics])();
+  // 生成tab列表 （tab 标签 + 数量）
+  const tabTypes = useCallback(() => TAB_TYPE.map((item) => ({
+    key: item.key,
+    label: `${item.label} ${(data[item.dataKey as keyof DataType] || []).length}`
+  })), [data])();
 
+  // 当前tab
   const [tabType, setTabType] = useState<string>('1');
 
+  // 购物车是否打开
   const [open, setOpen] = useState(true);
-
+  // 关闭购物车
   const handleClose = () => {
     setOpen(false);
     setTabType('1');
     setChecked([]);
   };
 
+  // 切换tab （切换tab 时，清空选中状态）
   const handleTabChange = (key: string) => {
     setTabType(key);
     setChecked([]);
   }
-
+  // 当前tab下选中的id
   const [checked, setChecked] = useState<number[]>([]);
 
+  // 选中状态改变
   const handleCheckChange = (id: number, checked: boolean) => {
     if (checked) {
       setChecked(prev => [...prev, id]);
@@ -50,9 +96,9 @@ export default function HomePage() {
   };
 
   // 判断是否购买过
-  const isBought = (id: number, licType: API.licTypes,data?: API.v1GetVideoDownloadLicTypesBoughtReply[] | API.v1GetFotoDownloadLicTypesBoughtReply[] | API.v1GetMusicDownloadLicTypesBoughtReply[]) => {
+  const isBought = (id: number, licType: API.licTypes, data?: API.v1GetVideoDownloadLicTypesBoughtReply[] | API.v1GetFotoDownloadLicTypesBoughtReply[] | API.v1GetMusicDownloadLicTypesBoughtReply[]) => {
     let res = false;
-    (data || []).forEach(item => {
+    (data || []).forEach((item: any) => {
       let idOk = false;
       if (('vid' in item && item.vid === id) ||
         ('fid' in item && item.fid === id) ||
@@ -72,14 +118,15 @@ export default function HomePage() {
 
   // 计算当前tab下所有item的id数组
   const getCurrentTabIds = () => {
-    if (tabType === '1') return (CartVideos || []).map(item => item.vid);
-    if (tabType === '2') return (CartFotos || []).map(item => item.fid);
-    if (tabType === '3') return (CartMusicMusics || []).map(item => item.mid);
-    return [];
+    const currentTab = TAB_TYPE_MAP[tabType];
+    if (!currentTab) return [];
+    return (data[currentTab.dataKey as keyof DataType] || [])
+      .filter((item: any) => item.auditStatus === 'SUCCESS')
+      .map((item: any) => item[currentTab.id]);
   };
 
   // 全选是否选中
-  const isAllChecked = getCurrentTabIds().length > 0 && getCurrentTabIds().every(id => checked.includes(id));
+  const isAllChecked = getCurrentTabIds().length > 0 && getCurrentTabIds().every((id: number) => checked.includes(id));
 
   // 全选切换
   const handleCheckAll = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -93,10 +140,10 @@ export default function HomePage() {
 
   // 计算总价
   const getCheckedItems = () => {
-    if (tabType === '1') return (CartVideos || []).filter(item => checked.includes(item.vid));
-    if (tabType === '2') return (CartFotos || []).filter(item => checked.includes(item.fid));
-    if (tabType === '3') return (CartMusicMusics || []).filter(item => checked.includes(item.mid));
-    return [];
+    const currentTab = TAB_TYPE_MAP[tabType];
+    if (!currentTab) return [];
+    return (data[currentTab.dataKey as keyof DataType] || [])
+      .filter((item: any) => checked.includes(item[currentTab.id]));
   };
   const getItemPrice = (item: any) => {
     if (item.licType === 'NP') return item.price;
@@ -106,7 +153,12 @@ export default function HomePage() {
   };
   const checkedItems = getCheckedItems();
   const checkedCount = checkedItems.length;
-  const checkedTotal = checkedItems.reduce((sum, item) => sum + getItemPrice(item), 0);
+  const checkedTotal = checkedItems.reduce((sum: number, item: any) => sum + getItemPrice(item), 0);
+
+  // 提交购买 打印日志
+  const onSubmit = () => {
+    console.log(`业务线：${TAB_TYPE_MAP[tabType].label}，ids：${checkedItems.map((item: any) => (item as any)[TAB_TYPE_MAP[tabType as keyof typeof TAB_TYPE_MAP].id]).join('、')}，总计：${checkedTotal}元`);
+  }
 
   return (
     <>
@@ -129,58 +181,37 @@ export default function HomePage() {
             items={tabTypes}
             onChange={handleTabChange}
           />  
-          <div className='flex-1'>
-              {
-                tabType === '1' && <ul>
-                  {
-                    CartVideos?.map((item) => (
-                      <li key={item.vid}>
-                        <Item 
-                          data={item} 
-                          checked={checked.includes(item.vid)} 
-                          isBought={isBought(item.vid, item.licType,VideoDownloadLicTypesBought)}
-                          onChange={(val) => handleCheckChange(item.vid, val)} 
-                          onRemove={() => {}}
-                        />
-                      </li>
-                    ))
-                  }    
-                </ul>
-              }
-              {
-                tabType === '2' && <ul>
-                  {
-                    CartFotos?.map((item) => (
-                      <li key={item.fid}>
-                        <Item 
-                          data={item} 
-                          checked={checked.includes(item.fid)} 
-                          isBought={isBought(item.fid, item.licType,FotoDownloadLicTypesBought)}
-                          onChange={(val) => handleCheckChange(item.fid, val)} 
-                          onRemove={() => {}}
-                        />
-                      </li>
-                    ))
-                  }    
-                </ul>
-              }
-              {
-                tabType === '3' && <ul>
-                  {
-                    CartMusicMusics?.map((item) => (
-                      <li key={item.mid}>
-                        <Item 
-                          data={item} 
-                          checked={checked.includes(item.mid)} 
-                          isBought={isBought(item.mid, item.licType,MusicDownloadLicTypesBought)}
-                          onChange={(val) => handleCheckChange(item.mid, val)} 
-                          onRemove={() => {}}
-                        />
-                      </li>
-                    ))
-                  }    
-                </ul>
-              }
+          <div className='flex-1 overflow-y-auto'>
+            <ul>
+              {TAB_TYPE_MAP[tabType] && (data[TAB_TYPE_MAP[tabType].dataKey as keyof DataType]?.length > 0 ? (
+                data[TAB_TYPE_MAP[tabType].dataKey as keyof DataType].map((item: any) => (
+                  <li key={item[TAB_TYPE_MAP[tabType].id]} className='mb-4'>
+                    <Item 
+                      data={item} 
+                      checked={checked.includes(item[TAB_TYPE_MAP[tabType].id])} 
+                      isBought={isBought(
+                        item[TAB_TYPE_MAP[tabType].id], 
+                        item.licType,
+                        data[TAB_TYPE_MAP[tabType].boughtKey as keyof DataType]
+                      )}
+                      onChange={(val) => handleCheckChange(item[TAB_TYPE_MAP[tabType].id], val)} 
+                      onRemove={() => {}}
+                    />
+                  </li>
+                ))
+              ) : (
+                <div style={{textAlign: 'center', marginTop: 60}}>
+                  <svg viewBox="0 0 80 80" width="24" height="24" className="w-20 h-20">
+                    <rect width="80" height="80" fill="none" rx="0"></rect>
+                    <rect width="20" height="14" x="15" y="21" fill="#EDEDED" rx="4"></rect>
+                    <rect width="20" height="14" x="44" y="21" fill="#EDEDED" rx="4"></rect>
+                    <rect width="49" height="14" x="15" y="45" fill="#EDEDED" rx="4"></rect>
+                    <path fill="#CCC" d="M38.665 31v2q0 1.191-.571 2.237l-1.167-.638q.408-.747.408-1.599v-2h1.33Zm-4.353 6.655q-.156.01-.312.01h-3.727v-1.33H34q.112 0 .223-.007l.089 1.327Zm-8.039.01h-4v-1.33h4v1.33Zm-8.022-1.89q-.916-1.236-.916-2.775v-1.454h1.33V33q0 1.1.655 1.984l-1.07.792Zm-.916-8.229v-4h1.33v4h-1.33Zm1.64-8.097q1.307-1.114 3.025-1.114h1.18v1.33H22q-1.228 0-2.163.796l-.862-1.012Zm8.206-1.114h4v1.33h-4v-1.33Zm8.173.2q1.145.348 1.981 1.203.837.855 1.158 2.008l-1.28.357q-.23-.823-.829-1.435-.598-.611-1.416-.86l.386-1.272ZM38.665 23v4h-1.33v-4h1.33ZM60.665 55v2q0 1.191-.571 2.237l-1.167-.638q.408-.747.408-1.599v-2h1.33Zm-4.353 6.655q-.156.01-.312.01h-3.727v-1.33H56q.112 0 .223-.007l.089 1.327Zm-8.039.01h-4v-1.33h4v1.33Zm-8 0h-4v-1.33h4v1.33Zm-8 0h-4v-1.33h4v1.33Zm-8 0H22q-1.023 0-1.952-.428l.557-1.208q.664.306 1.395.306h2.273v1.33Zm-6.895-4.034q-.043-.314-.043-.631v-3.454h1.33V57q0 .226.03.45l-1.317.18Zm-.043-8.085V47q0-.858.305-1.66l1.243.473q-.218.574-.218 1.187v2.546h-1.33Zm3.717-7.114q.47-.097.948-.097h3.18v1.33H22q-.342 0-.677.07l-.27-1.303Zm8.129-.097h4v1.33h-4v-1.33Zm8 0h4v1.33h-4v-1.33Zm8 0h4v1.33h-4v-1.33Zm8 0H56q.692 0 1.354.2l-.386 1.274q-.473-.144-.968-.144h-2.82v-1.33Zm7.312 3.41q.172.616.172 1.255v4h-1.33v-4q0-.457-.123-.897l1.281-.357Z"></path>
+                  </svg>
+                  <div style={{marginTop: 20, color: '#666', fontSize: 28}}>暂无数据</div>
+                </div>
+              ))}
+            </ul>
           </div>
           <hr className="border-0 border-b w-full h-[0px] text-[#F0F0F0]"></hr>
           <div className="flex flex-col h-[170px] opacity-100 flex flex-col py-[28px] px-[40px] bg-[#FEFEFE] z-10">
@@ -195,6 +226,7 @@ export default function HomePage() {
               className="w-full h-12 rounded-lg text-white text-lg font-medium"
               style={{background: checkedCount === 0 ? '#ccc' : '#000', cursor: checkedCount === 0 ? 'not-allowed' : 'pointer'}}
               disabled={checkedCount === 0}
+              onClick={onSubmit}
             >
               立即购买
             </button>

@@ -12,27 +12,23 @@ interface Props {
 
 const App = (props: Props) => {
   const { checked, onChange, data, onRemove, isBought } = props;
-  const [hover, setHover] = useState(false);
 
   // 判断状态
-  // const isDisabled = data.status === 'disabled';
-  const isDisabled = false;
+  const isDisabled = data.auditStatus === 'FAIL';
   const isRepeat = false;
   return (
     <div
-      onMouseEnter={() => setHover(true)}
-      onMouseLeave={() => setHover(false)}
       className={`
+        group
         flex p-5 rounded-lg group/item transition
-        ${isDisabled || isBought ? 'bg-neutral-50 opacity-60 cursor-not-allowed' : hover ? 'bg-neutral-100 border border-primary-100' : 'bg-white shadow'}
+        hover:bg-neutral-100 border border-primary-100 bg-white shadow
       `}
     >
       <div className="flex items-center mr-4">
         <Checkbox
           checked={checked}
           onChange={e => onChange(e.target.checked)}
-          disabled={isDisabled || isBought}
-          className={hover && !isDisabled && !isBought ? 'border-primary-100' : ''}
+          disabled={isDisabled}
         />
       </div>
       <div className="flex w-[99px] h-[66px] rounded-sm overflow-hidden flex-shrink-0">
@@ -52,15 +48,13 @@ const App = (props: Props) => {
           }</span>}
         </div>
         <div className="flex justify-between items-center mt-3">
-          {hover && !isDisabled && !isRepeat && (
             <button
               type="button"
               onClick={onRemove}
-              className="bg-neutral-20 text-neutral-80 rounded px-3 py-1 hover:bg-neutral-40 transition"
+              className="bg-neutral-20 text-neutral-80 rounded px-3 opacity-0 py-1 group-hover:opacity-100 transition"
             >
               移除
             </button>
-          )}
           <div className="flex items-center space-x-2">
             <span className="text-neutral-60">{LICENSE_TYPE_OBJ[data.licType]}</span>
             <span className={isDisabled || isRepeat ? 'text-2xl font-medium text-neutral-40' : 'text-2xl font-medium text-black'}>
