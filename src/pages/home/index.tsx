@@ -1,10 +1,8 @@
 import React, { useState, useCallback } from 'react';
 import ShoppingIcon from './ShoppingIcon';
 import { useGetAllData } from './hooks';
-import { Drawer, Tabs } from 'antd';
-import { CloseOutlined } from '@ant-design/icons';
+import { Drawer, Tabs, Checkbox, Button } from 'antd';
 import Item from './Item';
-import { Checkbox } from 'antd';
 // tab相关数据
 import { TAB_TYPE, TAB_TYPE_MAP } from './config';
 
@@ -120,6 +118,10 @@ export default function HomePage() {
                 总计：${checkedTotal}元`);
   }
 
+  // 移除 接口
+  const handleRemove = (e: React.MouseEvent<HTMLButtonElement>) => {
+    e.stopPropagation();
+  }
   return (
     <>
       <ShoppingIcon count={total} onClick={() => setOpen(true)}/>
@@ -128,24 +130,46 @@ export default function HomePage() {
         open={open}
         width={514}
         closable={false}
+        styles={{
+          header: {
+            padding: "36px 40px 0 40px",
+            border: "0",
+          },
+          body: {
+            padding: "0",
+          },
+        }}
         title={
-          <div className='flex justify-between'>
-            <span>22222</span>
-            <CloseOutlined onClick={handleClose}/>
+          <div className='flex justify-between h-[36px]'>
+            <span className='font-[PingFang-SC] text-[24px] font-[500] text-[#0D0D0D]'>购物车</span>
+            <svg onClick={handleClose} className='cursor-pointer' viewBox="0 0 24 24" width="28" height="28">
+              <g fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <line x1="7" y1="7" x2="17" y2="17"></line>
+                <line x1="7" y1="17" x2="17" y2="7"></line>
+                </g>
+              </svg>
           </div>
         }
       >
         <div className='flex flex-col h-full'>
-          <Tabs
-            activeKey={tabType}
-            items={tabTypes}
-            onChange={handleTabChange}
-          />  
-          <div className='flex-1 overflow-y-auto'>
+          <div className='pt-[32px]'>
+            <Tabs
+              activeKey={tabType}
+              items={tabTypes}
+              className=' px-[40px]'
+              onChange={handleTabChange}
+              tabBarGutter={40}
+              tabBarStyle={{
+                // padding: "0 40px",
+                
+              }}
+            />    
+          </div>
+          <div className='flex-1 overflow-y-auto px-[20px]'>
             <ul>
               {tabTypeObj && (data[tabTypeObj.dataKey as keyof DataType]?.length > 0 ? (
                 data[tabTypeObj.dataKey as keyof DataType].map((item: any) => (
-                  <li key={item[tabTypeObj.id]} className='mb-4'>
+                  <li key={item[tabTypeObj.id]}>
                     <Item 
                       data={item} 
                       tabType={tabTypeObj}
@@ -156,7 +180,7 @@ export default function HomePage() {
                         data[tabTypeObj.boughtKey as keyof DataType]
                       )}
                       onChange={(val) => handleCheckChange(item[tabTypeObj.id], val)} 
-                      onRemove={() => {}}
+                      onRemove={handleRemove}
                     />
                   </li>
                 ))
@@ -177,17 +201,18 @@ export default function HomePage() {
             </ul>
           </div>
           <hr className="border-0 border-b w-full h-[0px] text-[#F0F0F0]"></hr>
-          <div className="flex flex-col h-[170px] opacity-100 flex flex-col py-[28px] px-[40px] bg-[#FEFEFE] z-10">
+          <div className="flex flex-col h-[170px] opacity-100 flex flex-col justify-between py-[28px] px-[40px] bg-[#FEFEFE] z-10">
             <div className="flex relative justify-between items-center mb-4">
               <label className="flex items-center cursor-pointer select-none">
-                <Checkbox checked={isAllChecked} onChange={(e) => handleCheckAll(e.target.checked)} />
+                <Checkbox checked={isAllChecked} onChange={(e) => handleCheckAll(e.target.checked)} className={""} />
                 <span className="ml-2">全选</span>
               </label>
-              <span>已选 {checkedCount} 件  总计：<span style={{color:'#FF3B30',fontSize:24}}>{checkedTotal}</span><span style={{fontSize:16,verticalAlign:'top',marginLeft:2}}>元</span></span>
+              <span>已选 {checkedCount} 件  总计：<span style={{color:'#FF3B30',fontSize:24}}>{checkedTotal}</span>
+                <span>元</span>
+              </span>
             </div>
             <button
-              className="w-full h-12 rounded-lg text-white text-lg font-medium"
-              style={{background: checkedCount === 0 ? '#ccc' : '#000', cursor: checkedCount === 0 ? 'not-allowed' : 'pointer'}}
+              className="w-full h-[56px] rounded-[4px] bg-[#0D0D0D] text-[#fff] text-[16px] font-[500] rounded-[28px] hover:bg-[#0D0D0D] border-none"
               disabled={checkedCount === 0}
               onClick={onSubmit}
             >
