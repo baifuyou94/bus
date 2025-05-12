@@ -40,12 +40,12 @@ const App = (props: Props) => {
         />
       </div>
       <div className="flex w-[117px] h-[66px] rounded-[4px] overflow-hidden flex-shrink-0 relative">
-        {isDisabled && <span className="text-[#404040] text-[14px] bg-[rgba(13,13,13,0.5)] font-[500] text-[#fff] absolute left-[0] top-[0] w-full h-full flex-center">已下架</span>}
+        {isDisabled && <span className="text-[14px] bg-[rgba(13,13,13,0.5)] font-medium text-[#fff] absolute left-[0] top-[0] w-full h-full flex-center">已下架</span>}
         <img src={data.coverImage} alt={data.title} className="w-full h-full object-cover" />
       </div>
       <div className="flex-1 flex flex-col h-[66px] justify-center ml-[12px] overflow-hidden">
-        <div className="text-[16px] font-[500] text-[#0D0D0D] leading-[24px]">{data.title}</div>
-        <div className="flex items-center mt-[12px] text-[ #404040] text-[14px] leading-[22px]">
+        <div className="text-[16px] font-medium text-black leading-[24px] overflow-hidden text-ellipsis whitespace-nowrap">{data.title}</div>
+        <div className="flex items-center mt-[12px] text-gray text-[14px] leading-[22px]">
           {/* @ts-ignore 忽略提示吧 */}
           <span>ID：{data[TAB_TYPE_MAP[tabType.key].id]}</span>
           <span className="border-l border-[#404040] h-3 mx-[12px]"></span>
@@ -53,7 +53,7 @@ const App = (props: Props) => {
         </div>
       </div> 
     </div>
-    {isBought && <div className="text-[#404040] text-[14px] mt-[12px] pl-[36px] flex items-center leading-[22px]">
+    {isBought && <div className="text-gray text-[14px] mt-[12px] pl-[36px] flex items-center leading-[22px]">
       <span>您已购买过此素材</span>
       <svg fill="none" version="1.1" width="16" height="16" viewBox="0 0 16 16" className="translate-y-[1px]">
         <g>
@@ -70,16 +70,16 @@ const App = (props: Props) => {
       <button
         type="button"
         onClick={onRemove}
-        className="text-[#0D0D0D] text-[14px] font-[500] pl-[36px] opacity-0 group-hover:opacity-100 transition hover:text-[#0d0d0d80]"
+        className="text-black text-[14px] font-medium pl-[36px] opacity-0 group-hover:opacity-100 transition hover:text-[#0d0d0d80]"
       >
         移除
       </button>
       <div className="flex items-center">
-        <span className="text-[#404040] text-[14px]">{licenseType.label}</span>
-        <span className="text-[20px] font-[500] text-[ #0D0D0D] ml-[16px]">
+        <span className="text-gray text-[14px]">{licenseType.label}</span>
+        <span className="text-[20px] font-medium text-black ml-[16px]">
           {data.price * licenseType.rate}
         </span>
-        <span className="text-[14px] text-[#0D0D0D] ml-[2px] translate-y-[1px]">元</span>
+        <span className="text-[14px] text-black ml-[2px] translate-y-[1px]">元</span>
       </div>
     </div>
   </div>
